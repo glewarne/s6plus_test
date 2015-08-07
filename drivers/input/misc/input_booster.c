@@ -13,6 +13,10 @@
  *
  */
 #include "input_booster.h"
+#include <linux/moduleparam.h>
+
+static bool inputboost_toggle = false;
+module_param(inputboost_toggle, bool, 0644);
 
 static const char * const booster_device_name[BOOSTER_DEVICE_MAX] = {
 	"key",
@@ -217,6 +221,9 @@ DECLARE_DVFS_WORK_FUNC(SET, TOUCHKEY)
 	struct input_booster *data = (struct input_booster *)booster_data;
 	struct booster_dvfs *dvfs = data->dvfses[BOOSTER_DEVICE_TOUCHKEY];
 
+	if (inputboost_toggle)
+		return;
+
 	if (!dvfs || !dvfs->initialized) {
 		dev_err(data->dev, "%s: Dvfs is not initialized\n",	__func__);
 		return;
@@ -279,6 +286,9 @@ DECLARE_DVFS_DELAYED_WORK_FUNC(CHG, TOUCH)
 	struct booster_dvfs *dvfs =
 		container_of(work, struct booster_dvfs, dvfs_chg_work.work);
 	struct input_booster *data = dev_get_drvdata(dvfs->parent_dev);
+
+	if (inputboost_toggle)
+		return;
 
 	mutex_lock(&dvfs->lock);
 
@@ -354,6 +364,10 @@ DECLARE_DVFS_WORK_FUNC(SET, TOUCH)
 {
 	struct input_booster *data = (struct input_booster *)booster_data;
 	struct booster_dvfs *dvfs = data->dvfses[BOOSTER_DEVICE_TOUCH];
+
+
+	if (inputboost_toggle)
+		return;
 
 	if (!dvfs || !dvfs->initialized) {
 		dev_err(data->dev, "%s: Dvfs is not initialized\n",	__func__);
@@ -451,6 +465,9 @@ DECLARE_DVFS_DELAYED_WORK_FUNC(CHG, PEN)
 		container_of(work, struct booster_dvfs, dvfs_chg_work.work);
 	struct input_booster *data = dev_get_drvdata(dvfs->parent_dev);
 
+	if (inputboost_toggle)
+		return;
+
 	mutex_lock(&dvfs->lock);
 
 	if (!dvfs->times[dvfs->level].phase_time)
@@ -525,6 +542,9 @@ DECLARE_DVFS_WORK_FUNC(SET, PEN)
 {
 	struct input_booster *data = (struct input_booster *)booster_data;
 	struct booster_dvfs *dvfs = data->dvfses[BOOSTER_DEVICE_PEN];
+
+	if (inputboost_toggle)
+		return;
 
 	if (!dvfs || !dvfs->initialized) {
 		dev_err(data->dev, "%s: Dvfs is not initialized\n",	__func__);

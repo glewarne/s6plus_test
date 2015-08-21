@@ -50,6 +50,7 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
+#include <linux/moduleparam.h>
 
 struct cpufreq_interactive_cpuinfo {
 	struct timer_list cpu_timer;
@@ -74,6 +75,9 @@ struct cpufreq_interactive_cpuinfo {
 	int prev_region;
 #endif
 };
+
+static bool enforce_toggle = false;
+module_param(enforce_toggle, bool, 0644);
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
 
@@ -696,6 +700,14 @@ static void cpufreq_interactive_timer(unsigned long data)
 		goto rearm;
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	spin_lock_irqsave(&tunables->mode_lock, flags);
+
+	if (enforce_toggle)
+		if (tunables->enforced_mode != 1)
+			tunables->enforced_mode = 1 ;
+	else
+		if (tunables->enforced_mode != 0)
+			tunables->enforced_mode = 0 ;
+
 	if (tunables->enforced_mode)
 		new_mode = tunables->enforced_mode;
 	else
@@ -708,6 +720,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 		else
 			exit_mode(tunables);
 	}
+
 	spin_unlock_irqrestore(&tunables->mode_lock, flags);
 #endif
 	spin_lock_irqsave(&pcpu->target_freq_lock, flags);
@@ -2532,7 +2545,7 @@ static
 struct cpufreq_governor cpufreq_gov_interactive = {
 	.name = "interactive",
 	.governor = cpufreq_governor_interactive,
-	.max_transition_latency = 10000000,
+	.max_transition_latency = 20000,
 	.owner = THIS_MODULE,
 };
 
